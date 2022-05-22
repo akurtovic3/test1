@@ -74,3 +74,301 @@ db.collection.distinct("ime")
 
 5.Pronaći petu stranicu svih osoba ako stranica ima 10objekatasortirano obrnuto abecedno po prezimenu(4 boda).
 db.collection.find({}).sort({"prezime":-1}).skip(4*10).limit(10)
+
+
+
+*****************komande***
+
+2-10 Mongo upiti
+Tipovi podataka
+Kao i u SQL bazama podataka, tako i MongoDB atributi u objektima imaju tipove. Neki od
+najčešćih tipova su: null, ObjectId, number, double, string, array, binData, bool, date, int, long. U
+MongoDB dokumentaciji može se pronaći paralelno poređenje sa SQL jezikom i naredbama kao
+i tipovima u MongoDB: https://docs.mongodb.com/manual/reference/sql-comparison/
+Primjer unosa objekta sa različitim tipovima podataka:
+db.studenti.insert({
+ime: 'Alisa',
+prezime: 'Alisovic',
+datum_rodj: ISODate('2005-03-01'),
+osobine: {
+godine: 15,
+visina: 160,
+tezina: NumberInt(55)
+},
+koeficijent: Number(3.37),
+grupa: 'D'
+});
+Ovo je primjer komplikovanijeg objekta. Za pretraživanje objekta spomenuta je find({}) metoda.
+Tako se može pretraživati na nekoliko načina.
+1. db.studenti.find({ ime: 'Alisa' });
+2. db.studenti.find({ prezime: 'Alisovic' });
+3. db.studenti.find({ ime: 'Alisa', prezime: 'Alisovic' });
+4. db.studenti.find({ datum_rodj: ISODate('2005-03-01 00:00:00.000Z') });
+5. db.studenti.find({ 'osobine.godine': 15 });
+Ovdje se mogu vidjeti primjeri pretraživanja na različite načine, uključujući i pretraživanje po
+atributima pod objekata. Za izmjenu podataka, koristi se update() metoda:
+db.studenti.update({ ime: 'Denis' },
+{ $set:
+{ prezime: 'Izmjena', godine: NumberInt(20) }
+});
+Na prvom mjestu se naznači objekat za pretraživanje, a na drugom mjestu objekat sa specijalnim
+operaterom $set, i objektom sa atributima koje želimo primjeniti. Efekat ove komande je da
+52
+nepoklapajući atributi u orginalnom objektu neće biti uklonjeni već će biti izmjenjeni samo
+podudarajući atributi ili dodani novi. Treba napomenuti da se _id atribut ne može mijenjati.
+Recimo da želimo dodati niz objekata za studenta:
+db.studenti.update({ ime: 'Denis' }, { $set: {
+ hobiji: [
+ { naziv: 'igre', godine: 3 },
+ { naziv: 'ples', godine: 2 },
+ { naziv: 'teretana', godine: 4 },
+ { naziv: 'fudbal', godine: 8 }
+ ]
+});
+Dodan je novi niz, liste hobija za sve studente kojima je ime Danis. Na isti način je mogao biti
+potražen dokument sa specifičnim _id. Da se pretraže studenti koji za prvi hobij imaju igre:
+db.studenti.find({
+ 'hobiji.0.naziv': 'igre'
+});
+Operatori $lt, $gt, $lte, $gte, $eq
+Ovi operatori omogućavaju pretraživanje poput manje ($lt), veće ($gt), manje ili jednako ($lte),
+veće ili jednako ($gte) i jednako ($eq). Ovi operatori se mogu primjeniti na sve tipove podataka.
+db.studenti.find({
+ godine: { $gte: 20 }
+});
+Operator $in i $all
+Ukoliko objekat ima niz brojeva poput:
+db.studenti.insert({
+ime: 'Kenan', prezime: 'Kenanovic',
+koeficijenti: [ 3, 8, 10, 11, 18, 21, 27 ]
+});
+I želimo da pretražimo sve objekte koji u atributu koeficijent imaju brojeve 11 ili 13, u te svrhe se
+može koristiti operator $in.
+db.studenti.find({ koeficijenti: { $in: [11, 13] } });
+53
+Za razliku operatora $in, operator $all zahtjeva da atribut ima sve vrijednosti navedene u upitu.
+Npr. da smo koristili $all u prethodnom upitu, ne bi pronašao Kenana jer među koeficijentima
+ima samo 11 ali nema 13.
+db.studenti.find({ koeficijenti: { $all: [11, 13] } });
+Jedinstvene vrijednosti
+Ukoliko želimo pronaći sva imena u kolekciji studenti, možemo koristiti distinct() funkciju, kojoj
+se proslijeđuje naziv atributa za kojeg je potrebno pronaći jedinstvene vrijednosti.
+db.studenti.distinct('ime');
+Ukoliko je potrebno tražiti jedinstvene vrijednosti na podskupu podataka, može se dodati upit
+kojim se sužava skup unutar kojeg se traži jedinstvena vrijednost.
+db.studenti.distinct('ime', { razred: 3 }});
+Tako da će ovaj upit pronaći jedintvena imena ali samo za studente za koje je razred=3.
+Operatori $and i $or
+Ovo su logički operatori koji mogu pomoći definisanje preciznijih zahtjeva za pretraživanjem. Npr.
+svi studenti koji su prvi ili treći razred:
+db.studenti.find({ $or: [{ razred: 1 }, { razred: 3 }] });
+Dakle, za ove operatore potrebno je definisati niz objekata koji predstavljaju uslove nad kojim se
+ovaj logički operator definiše. $and i $or se mogu kombinovati i sa ostalima pa npr traženje
+studenata koji imaju između 18 i 25 bi izgledalo ovako:
+db.studenti.find({
+$and: [{ godine: { $gte: 18 } }, { godine: { $lt: 25 } } ]
+});
+Moguće je i kombinovati sve ove operatore. Npr. svi student koji su prvi ili treći razred a upisani
+su na matematiku i fiziku:
+db.studenti.find({
+$and: [
+{ predmeti: { $all: ['Matematika', 'Fizika'] } },
+{ $or: [{ razred: 1 }, { razred: 3 }] }
+]
+});
+
+#######################################################################################
+2-10 Mongo upiti
+Tipovi podataka
+Kao i u SQL bazama podataka, tako i MongoDB atributi u objektima imaju tipove. Neki od
+najčešćih tipova su: null, ObjectId, number, double, string, array, binData, bool, date, int, long. U
+MongoDB dokumentaciji može se pronaći paralelno poređenje sa SQL jezikom i naredbama kao
+i tipovima u MongoDB: https://docs.mongodb.com/manual/reference/sql-comparison/
+Primjer unosa objekta sa različitim tipovima podataka:
+db.studenti.insert({
+ime: 'Alisa',
+prezime: 'Alisovic',
+datum_rodj: ISODate('2005-03-01'),
+osobine: {
+godine: 15,
+visina: 160,
+tezina: NumberInt(55)
+},
+koeficijent: Number(3.37),
+grupa: 'D'
+});
+Ovo je primjer komplikovanijeg objekta. Za pretraživanje objekta spomenuta je find({}) metoda.
+Tako se može pretraživati na nekoliko načina.
+1. db.studenti.find({ ime: 'Alisa' });
+2. db.studenti.find({ prezime: 'Alisovic' });
+3. db.studenti.find({ ime: 'Alisa', prezime: 'Alisovic' });
+4. db.studenti.find({ datum_rodj: ISODate('2005-03-01 00:00:00.000Z') });
+5. db.studenti.find({ 'osobine.godine': 15 });
+Ovdje se mogu vidjeti primjeri pretraživanja na različite načine, uključujući i pretraživanje po
+atributima pod objekata. Za izmjenu podataka, koristi se update() metoda:
+db.studenti.update({ ime: 'Denis' },
+{ $set:
+{ prezime: 'Izmjena', godine: NumberInt(20) }
+});
+Na prvom mjestu se naznači objekat za pretraživanje, a na drugom mjestu objekat sa specijalnim
+operaterom $set, i objektom sa atributima koje želimo primjeniti. Efekat ove komande je da
+52
+nepoklapajući atributi u orginalnom objektu neće biti uklonjeni već će biti izmjenjeni samo
+podudarajući atributi ili dodani novi. Treba napomenuti da se _id atribut ne može mijenjati.
+Recimo da želimo dodati niz objekata za studenta:
+db.studenti.update({ ime: 'Denis' }, { $set: {
+ hobiji: [
+ { naziv: 'igre', godine: 3 },
+ { naziv: 'ples', godine: 2 },
+ { naziv: 'teretana', godine: 4 },
+ { naziv: 'fudbal', godine: 8 }
+ ]
+});
+Dodan je novi niz, liste hobija za sve studente kojima je ime Danis. Na isti način je mogao biti
+potražen dokument sa specifičnim _id. Da se pretraže studenti koji za prvi hobij imaju igre:
+db.studenti.find({
+ 'hobiji.0.naziv': 'igre'
+});
+Operatori $lt, $gt, $lte, $gte, $eq
+Ovi operatori omogućavaju pretraživanje poput manje ($lt), veće ($gt), manje ili jednako ($lte),
+veće ili jednako ($gte) i jednako ($eq). Ovi operatori se mogu primjeniti na sve tipove podataka.
+db.studenti.find({
+ godine: { $gte: 20 }
+});
+Operator $in i $all
+Ukoliko objekat ima niz brojeva poput:
+db.studenti.insert({
+ime: 'Kenan', prezime: 'Kenanovic',
+koeficijenti: [ 3, 8, 10, 11, 18, 21, 27 ]
+});
+I želimo da pretražimo sve objekte koji u atributu koeficijent imaju brojeve 11 ili 13, u te svrhe se
+može koristiti operator $in.
+db.studenti.find({ koeficijenti: { $in: [11, 13] } });
+53
+Za razliku operatora $in, operator $all zahtjeva da atribut ima sve vrijednosti navedene u upitu.
+Npr. da smo koristili $all u prethodnom upitu, ne bi pronašao Kenana jer među koeficijentima
+ima samo 11 ali nema 13.
+db.studenti.find({ koeficijenti: { $all: [11, 13] } });
+Jedinstvene vrijednosti
+Ukoliko želimo pronaći sva imena u kolekciji studenti, možemo koristiti distinct() funkciju, kojoj
+se proslijeđuje naziv atributa za kojeg je potrebno pronaći jedinstvene vrijednosti.
+db.studenti.distinct('ime');
+Ukoliko je potrebno tražiti jedinstvene vrijednosti na podskupu podataka, može se dodati upit
+kojim se sužava skup unutar kojeg se traži jedinstvena vrijednost.
+db.studenti.distinct('ime', { razred: 3 }});
+Tako da će ovaj upit pronaći jedintvena imena ali samo za studente za koje je razred=3.
+Operatori $and i $or
+Ovo su logički operatori koji mogu pomoći definisanje preciznijih zahtjeva za pretraživanjem. Npr.
+svi studenti koji su prvi ili treći razred:
+db.studenti.find({ $or: [{ razred: 1 }, { razred: 3 }] });
+Dakle, za ove operatore potrebno je definisati niz objekata koji predstavljaju uslove nad kojim se
+ovaj logički operator definiše. $and i $or se mogu kombinovati i sa ostalima pa npr traženje
+studenata koji imaju između 18 i 25 bi izgledalo ovako:
+db.studenti.find({
+$and: [{ godine: { $gte: 18 } }, { godine: { $lt: 25 } } ]
+});
+Moguće je i kombinovati sve ove operatore. Npr. svi student koji su prvi ili treći razred a upisani
+su na matematiku i fiziku:
+db.studenti.find({
+$and: [
+{ predmeti: { $all: ['Matematika', 'Fizika'] } },
+{ $or: [{ razred: 1 }, { razred: 3 }] }
+]
+});
+
+##################################################################
+2-11 Ostale Mongo funkcije i operatori
+Sortiranje
+Da bi se sortirao objekat koristi se sort() funkcija nad objektima vraćenim koristeći find()
+metodu. Npr.:
+db.studenti.find({}).sort({ ime: 1, prezime: -1});
+Ovaj upit će vratiti sve studente sortirano abecedno po imenu i suprotno abecedno po prezimenu.
+S obzirom da _id polje u sebi sadrži datum kreiranja dokumenta, interesantna posljedica ovoga
+je da se može koristiti prilikom sortiranja, tako da se svi studenti, sortirani od zadnje kreiranog
+mogu pronaći koristeći:
+db.studenti.find({}).sort({ _id: -1 });
+Ograničavanje i paginacija
+Kako bi se pronašla određena stranica iz izlaznog skupa, mogu se koristiti metode skip() i
+limit(). Tako npr. šesta stranica studenata, ako stranica ima 10 elemenata, kombinovano sa
+sortiranjem:
+db.studenti.find({}).sort({ ime: 1 }).skip(5*10).limit(10);
+Tekstualna pretraga
+Pošto je moguće imati mnogo tekstualnih polja, potrebno je moći ih pretraživati. Vidjeli smo da
+možemo jednostavno reći find({ ime: ‘Alisa’ }) da pronađemo po imenu, ali ako želimo
+pretraživati tekstualne podatke po djelimičnom podudaranju. Tako npr. da nađemo sva imena
+koja počinju sa A, napisat ćemo:
+db.studenti.find({ ime: /^A[a-z]+/i })
+Ova komanda je zapravo dio Regex jezika za tekstualnu pretragu, kojim se zapravo definišu
+šabloni. Pravila ovog jezika su da se šablon po kojem se podudara tekst, definiše unutar dvije
+kose crte (/) nakon koje idu opcije. Tako da ovaj šablon ima sljedeće značenje:
+^ – kapica ili caret simbol, definiše početak teksta
+A – govori da se očekuje slovo A i s obzirom na prethodni simbol, prvo slovo mora biti A
+[a-z] – govori da se očekuje bilo koje slovo od a do z
++ – symbol koji označava da se prethodni iskaz može podudarati jednom ili više puta
+56
+Zbog toga što se tekst „Alice“ ili „Alisa“ zadovoljavaju ovaj šablon, onda će biti pronađeni svi
+objekti gdje ime ima podudaranje sa ovim šablonom.
+Neke od ostalih primjera će biti izlistani ali s obzirom da regex može biti komplikovan postoje alati
+sa kojima se može testirati podudaranje8
+. Npr.:
+/^[0-9]{3} [0-9]{3}-[0-9]{3,4}$/
+Šablon kojim se na početku (^) moraju naći tri ({3}) broja ([0-9]) onda mora biti razmak, onda
+moraju biti tri broja pa crta pa tri ili četri ({3,4}) broja opet i onda je kraj stringa. Ovo je korisno
+za podudaranje brojeva telefona, npr. 061 123-456 ili 062 123-4567, jer će svi netačno upisani
+brojevi pasti na testiranju šablona.
+/^\D+ic$/
+Šablon kojim se podudaraju svi stringovi koji od početka imaju 1 ili više (+) slova (\D), i završavaju
+($) sa ic. Postoje mnogi drugi simboli, jer su ovo samo primjeri te se ovim jezikom mogu napraviti
+raznorazni šabloni za podudaranje stringova.
+Projekcija
+S obzirom da objekti mogu biti različite veličine, te imati nizove u svojim atributima, različitih
+dimenzija, pronalaženje objekata koji mogu biti veliki može predstavljati problem. Postoje situacije
+u kojima nisu neophodne informacije svakog atributa. Npr. ako tražimo studenta, a student imaju
+listu hobija, i ima objekat osobine sa dugom listom osobina, međutim nas ne interesuju ni osobine
+ni hobiji već samo ime, prezime, i datum rodjenja, onda možemo iskoristiti projekcije da vratimo
+samo određenu listu atributa.
+db.studenti.find({}, { ime: 1, prezime: 1, datum_rodj: 1 });
+Projekcija se defineše kao drugi argument u find() funkciji. Taj objekat ima popis atributa koje
+želimo da nam se vrate i 1 kao vrijednost ili 0 ako ne želimo te atribute.
+Ukoliko je potrebno vratiti sve postojeće atribute, osim jednog onda možemo napisati:
+db.studenti.find({}, { hobiji: 0 });
+U ovom slučaju MongoDB će vratiti sve studente i sve njihove atribute osim atributa hobiji. Na
+ovaj način se mogu optimizovati upiti kako se nepotrebni podaci ne bi prenosili preko mreže i tako
+bi se ubrzao prenos i smanjili troškovi prenosa podataka koji se obično naplaćuju.
+Objektne baze podataka (u slučaju MongoDB dokumentna) faju fleksibilnu mogućnost i fleksibilnu
+strukturu organizacije podataka. Nedostatak je što nemaju jaku podršku za transakcije te je zbog
+toga potrebno pažljivo odmjeriti potrebe sistema za koji se projektuje i bira baza podataka.
+
+8 https://regex101.com/#javascript
+57
+Indeksiranje
+Kao i sve ostale baze podataka, i MongoDB ima indeksiranje koje omogućava brže pretraživanje
+po jednom ili više polja. Za razliku od MySQL baze, prilikom kreiranja indeksa, definiše se hoće li
+indeks biti uzlazni ili silazni. Da se pogledaju postojeći indeksi, koristi se getIndexes().
+db.studenti.getIndexes();
+[
+ {
+ "v" : 2,
+ "key" : {
+ "_id" : 1
+ },
+ "name" : "_id_"
+ }
+]
+Po defaultu, svaka kolekcija je indeksirana po _id polju. Međutim, moguće je napraviti indeks po
+bilo kojem drugom polju koristeći metodu createIndex().
+db.studenti.createIndex({ ime: 1 }, { name: 'Indeks po imenu' });
+Na ovaj način smo kreirali indeksiranje po imenu i dali mu naziv. Vrijednost 1 za ime pri kreiranju
+indeksa znači da će biti kreiran uzlazno sortirani indeks, a ako je -1 taj indeks će biti silazno
+sortirann. Na isti način možemo kreirati indeks koristeći više atributa.
+db.studenti.createIndex(
+{ ime: 1, prezime: -1 },
+{ name: 'Indeks po nazivu' }
+);
+Kako smo kreirali indeks, tako možemo i obrisati indeks nad kolekcijom, identifikovajući ga
+koristeći njegovo ime ili specifikaciju:
+db.studenti.dropIndex({ ime: 1});
+ili
+db.studenti.dropIndex('Indeks po imenu');
+
+
